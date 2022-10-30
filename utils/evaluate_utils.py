@@ -14,25 +14,25 @@ from losses.losses import entropy
 
 
 @torch.no_grad()
-def contrastive_evaluate(val_loader, model, memory_bank):
+def contrastive_evaluate(device, val_loader, model, memory_bank):
     top1 = AverageMeter('Acc@1', ':6.2f')
     model.eval()
 
     for batch in val_loader:
-        images = batch['image'].cuda(non_blocking=True)
-        target = batch['target'].cuda(non_blocking=True)
+        images = batch['image'].to(device, non_blocking=True)
+        target = batch['target'].to(device, non_blocking=True)
 
         output = model(images)
-        output = memory_bank.weighted_knn(output) 
+        output = memory_bank.weighted_knn(output)
 
-        acc1 = 100*torch.mean(torch.eq(output, target).float())
+        acc1 = 100 * torch.mean(torch.eq(output, target).float())
         top1.update(acc1.item(), images.size(0))
 
     return top1.avg
 
 
 @torch.no_grad()
-def get_predictions(p, dataloader, model, return_features=False):
+def get_predictions(device, p, dataloader, model, return_features=False):
     # Make predictions on a dataset with neighbors
     model.eval()
     predictions = [[] for _ in range(p['num_heads'])]
@@ -40,9 +40,9 @@ def get_predictions(p, dataloader, model, return_features=False):
     targets = []
     if return_features:
         ft_dim = get_feature_dimensions_backbone(p)
-        features = torch.zeros((len(dataloader.sampler), ft_dim)).cuda()
-    
-    if isinstance(dataloader.dataset, NeighborsDataset): # Also return the neighbors
+        features = torch.zeros((len(dataloader.sampler), ft_dim)).to(device)
+
+    if isinstance(dataloader.dataset, NeighborsDataset):  # Also return the neighbors
         key_ = 'anchor'
         include_neighbors = True
         neighbors = []
@@ -53,12 +53,12 @@ def get_predictions(p, dataloader, model, return_features=False):
 
     ptr = 0
     for batch in dataloader:
-        images = batch[key_].cuda(non_blocking=True)
+        images = batch[key_].to(device, non_blocking=True)
         bs = images.shape[0]
         res = model(images, forward_pass='return_all')
         output = res['output']
         if return_features:
-            features[ptr: ptr+bs] = res['features']
+            features[ptr: ptr + bs] = res['features']
             ptr += bs
         for i, output_i in enumerate(output):
             predictions[i].append(torch.argmax(output_i, dim=1))
@@ -67,7 +67,7 @@ def get_predictions(p, dataloader, model, return_features=False):
         if include_neighbors:
             neighbors.append(batch['possible_neighbors'])
 
-    predictions = [torch.cat(pred_, dim = 0).cpu() for pred_ in predictions]
+    predictions = [torch.cat(pred_, dim=0).cpu() for pred_ in predictions]
     probs = [torch.cat(prob_, dim=0).cpu() for prob_ in probs]
     targets = torch.cat(targets, dim=0)
 
@@ -87,29 +87,29 @@ def get_predictions(p, dataloader, model, return_features=False):
 @torch.no_grad()
 def scan_evaluate(predictions):
     # Evaluate model based on SCAN loss.
-    num_heads = len(predictions)
+    # num_heads = len(predictions)
     output = []
 
     for head in predictions:
         # Neighbors and anchors
         probs = head['probabilities']
         neighbors = head['neighbors']
-        anchors = torch.arange(neighbors.size(0)).view(-1,1).expand_as(neighbors)
+        anchors = torch.arange(neighbors.size(0)).view(-1, 1).expand_as(neighbors)
 
         # Entropy loss
         entropy_loss = entropy(torch.mean(probs, dim=0), input_as_probabilities=True).item()
-        
-        # Consistency loss       
+
+        # Consistency loss
         similarity = torch.matmul(probs, probs.t())
         neighbors = neighbors.contiguous().view(-1)
         anchors = anchors.contiguous().view(-1)
         similarity = similarity[anchors, neighbors]
         ones = torch.ones_like(similarity)
         consistency_loss = F.binary_cross_entropy(similarity, ones).item()
-        
+
         # Total loss
         total_loss = - entropy_loss + consistency_loss
-        
+
         output.append({'entropy': entropy_loss, 'consistency': consistency_loss, 'total_loss': total_loss})
 
     total_losses = [output_['total_loss'] for output_ in output]
@@ -120,22 +120,22 @@ def scan_evaluate(predictions):
 
 
 @torch.no_grad()
-def hungarian_evaluate(subhead_index, all_predictions, class_names=None, 
-                        compute_purity=True, compute_confusion_matrix=True,
-                        confusion_matrix_file=None):
+def hungarian_evaluate(device, subhead_index, all_predictions, class_names=None,
+                       compute_purity=True, compute_confusion_matrix=True,
+                       confusion_matrix_file=None):
     # Evaluate model based on hungarian matching between predicted cluster assignment and gt classes.
     # This is computed only for the passed subhead index.
 
     # Hungarian matching
     head = all_predictions[subhead_index]
-    targets = head['targets'].cuda()
-    predictions = head['predictions'].cuda()
-    probs = head['probabilities'].cuda()
+    targets = head['targets'].to(device)
+    predictions = head['predictions'].to(device)
+    probs = head['probabilities'].to(device)
     num_classes = torch.unique(targets).numel()
     num_elems = targets.size(0)
 
     match = _hungarian_match(predictions, targets, preds_k=num_classes, targets_k=num_classes)
-    reordered_preds = torch.zeros(num_elems, dtype=predictions.dtype).cuda()
+    reordered_preds = torch.zeros(num_elems, dtype=predictions.dtype).to(device)
     for pred_i, target_i in match:
         reordered_preds[predictions == int(pred_i)] = int(target_i)
 
@@ -143,18 +143,18 @@ def hungarian_evaluate(subhead_index, all_predictions, class_names=None,
     acc = int((reordered_preds == targets).sum()) / float(num_elems)
     nmi = metrics.normalized_mutual_info_score(targets.cpu().numpy(), predictions.cpu().numpy())
     ari = metrics.adjusted_rand_score(targets.cpu().numpy(), predictions.cpu().numpy())
-    
+
     _, preds_top5 = probs.topk(5, 1, largest=True)
     reordered_preds_top5 = torch.zeros_like(preds_top5)
     for pred_i, target_i in match:
         reordered_preds_top5[preds_top5 == int(pred_i)] = int(target_i)
-    correct_top5_binary = reordered_preds_top5.eq(targets.view(-1,1).expand_as(reordered_preds_top5))
+    correct_top5_binary = reordered_preds_top5.eq(targets.view(-1, 1).expand_as(reordered_preds_top5))
     top5 = float(correct_top5_binary.sum()) / float(num_elems)
 
     # Compute confusion matrix
     if compute_confusion_matrix:
-        confusion_matrix(reordered_preds.cpu().numpy(), targets.cpu().numpy(), 
-                            class_names, confusion_matrix_file)
+        confusion_matrix(reordered_preds.cpu().numpy(), targets.cpu().numpy(),
+                         class_names, confusion_matrix_file)
 
     return {'ACC': acc, 'ARI': ari, 'NMI': nmi, 'ACC Top-5': top5, 'hungarian_match': match}
 

@@ -3,7 +3,7 @@ Author: Wouter Van Gansbeke, Simon Vandenhende
 Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by-nc/4.0/)
 """
 import os
-import torch
+# import torch
 import torchvision.datasets as datasets
 import torch.utils.data as data
 from PIL import Image
@@ -14,12 +14,12 @@ from glob import glob
 
 class ImageNet(datasets.ImageFolder):
     def __init__(self, root=MyPath.db_root_dir('imagenet'), split='train', transform=None):
-        super(ImageNet, self).__init__(root=os.path.join(root, 'ILSVRC2012_img_%s' %(split)),
-                                         transform=None)
-        self.transform = transform 
+        super(ImageNet, self).__init__(root=os.path.join(root, 'ILSVRC2012_img_%s' % (split)),
+                                       transform=None)
+        self.transform = transform
         self.split = split
         self.resize = tf.Resize(256)
-    
+
     def __len__(self):
         return len(self.imgs)
 
@@ -41,16 +41,16 @@ class ImageNet(datasets.ImageFolder):
         path, target = self.imgs[index]
         with open(path, 'rb') as f:
             img = Image.open(f).convert('RGB')
-        img = self.resize(img) 
+        img = self.resize(img)
         return img
 
 
 class ImageNetSubset(data.Dataset):
-    def __init__(self, subset_file, root=MyPath.db_root_dir('imagenet'), split='train', 
-                    transform=None):
+    def __init__(self, subset_file, root=MyPath.db_root_dir('imagenet'), split='train',
+                 transform=None):
         super(ImageNetSubset, self).__init__()
 
-        self.root = os.path.join(root, 'ILSVRC2012_img_%s' %(split))
+        self.root = os.path.join(root, 'ILSVRC2012_img_%s' % (split))
         self.transform = transform
         self.split = split
 
@@ -66,21 +66,21 @@ class ImageNetSubset(data.Dataset):
         # Gather the files (sorted)
         imgs = []
         for i, subdir in enumerate(subdirs):
-            subdir_path = os.path.join(self.root, subdir)
+            # subdir_path = os.path.join(self.root, subdir)
             files = sorted(glob(os.path.join(self.root, subdir, '*.JPEG')))
             for f in files:
-                imgs.append((f, i)) 
-        self.imgs = imgs 
+                imgs.append((f, i))
+        self.imgs = imgs
         self.classes = class_names
-    
-	# Resize
+
+        # Resize
         self.resize = tf.Resize(256)
 
     def get_image(self, index):
         path, target = self.imgs[index]
         with open(path, 'rb') as f:
             img = Image.open(f).convert('RGB')
-        img = self.resize(img) 
+        img = self.resize(img)
         return img
 
     def __len__(self):
@@ -91,7 +91,7 @@ class ImageNetSubset(data.Dataset):
         with open(path, 'rb') as f:
             img = Image.open(f).convert('RGB')
         im_size = img.size
-        img = self.resize(img) 
+        img = self.resize(img)
         class_name = self.classes[target]
 
         if self.transform is not None:

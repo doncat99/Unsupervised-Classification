@@ -2,7 +2,7 @@
 Authors: Wouter Van Gansbeke, Simon Vandenhende
 Licensed under the CC BY-NC 4.0 license (https://creativecommons.org/licenses/by-nc/4.0/)
 """
-import torch
+# import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -13,7 +13,7 @@ class ContrastiveModel(nn.Module):
         self.backbone = backbone['backbone']
         self.backbone_dim = backbone['dim']
         self.head = head
- 
+
         if head == 'linear':
             self.contrastive_head = nn.Linear(self.backbone_dim, features_dim)
 
@@ -21,13 +21,13 @@ class ContrastiveModel(nn.Module):
             self.contrastive_head = nn.Sequential(
                     nn.Linear(self.backbone_dim, self.backbone_dim),
                     nn.ReLU(), nn.Linear(self.backbone_dim, features_dim))
-        
+
         else:
             raise ValueError('Invalid head {}'.format(head))
 
     def forward(self, x):
         features = self.contrastive_head(self.backbone(x))
-        features = F.normalize(features, dim = 1)
+        features = F.normalize(features, dim=1)
         return features
 
 
@@ -55,8 +55,8 @@ class ClusteringModel(nn.Module):
         elif forward_pass == 'return_all':
             features = self.backbone(x)
             out = {'features': features, 'output': [cluster_head(features) for cluster_head in self.cluster_head]}
-        
+
         else:
-            raise ValueError('Invalid forward pass {}'.format(forward_pass))        
+            raise ValueError('Invalid forward pass {}'.format(forward_pass))
 
         return out

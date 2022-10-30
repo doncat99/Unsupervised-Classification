@@ -5,7 +5,7 @@ import os
 import pickle
 import sys
 import numpy as np
-import torch
+# import torch
 from PIL import Image
 from torch.utils.data import Dataset
 from utils.mypath import MyPath
@@ -46,8 +46,8 @@ class CIFAR10(Dataset):
         'md5': '5ff9c542aee3614f3951f8cda6e48888',
     }
 
-    def __init__(self, root=MyPath.db_root_dir('cifar-10'), train=True, transform=None, 
-                    download=False):
+    def __init__(self, root=MyPath.db_root_dir('cifar-10'), train=True, transform=None,
+                 download=False):
 
         super(CIFAR10, self).__init__()
         self.root = root
@@ -112,19 +112,19 @@ class CIFAR10(Dataset):
         img, target = self.data[index], self.targets[index]
         img_size = (img.shape[0], img.shape[1])
         img = Image.fromarray(img)
-        class_name = self.classes[target]        
+        class_name = self.classes[target]
 
         if self.transform is not None:
             img = self.transform(img)
 
         out = {'image': img, 'target': target, 'meta': {'im_size': img_size, 'index': index, 'class_name': class_name}}
-        
+
         return out
 
     def get_image(self, index):
         img = self.data[index]
         return img
-        
+
     def __len__(self):
         return len(self.data)
 
@@ -168,10 +168,10 @@ class CIFAR20(CIFAR10):
         'key': 'fine_label_names',
         'md5': '7973b15100ade9c7d40fb424638fde48',
     }
-    def __init__(self, root=MyPath.db_root_dir('cifar-20'), train=True, transform=None, 
-                    download=False):
-        super(CIFAR20, self).__init__(root, train=train,transform=transform,
-                                        download=download)
+    def __init__(self, root=MyPath.db_root_dir('cifar-20'), train=True, transform=None,
+                 download=False):
+        super(CIFAR20, self).__init__(root, train=train, transform=transform,
+                                      download=download)
         # Remap classes from cifar-100 to cifar-20
         new_ = self.targets
         for idx, target in enumerate(self.targets):
@@ -181,106 +181,107 @@ class CIFAR20(CIFAR10):
 
 
 def _cifar100_to_cifar20(target):
-  _dict = \
-    {0: 4,
-     1: 1,
-     2: 14,
-     3: 8,
-     4: 0,
-     5: 6,
-     6: 7,
-     7: 7,
-     8: 18,
-     9: 3,
-     10: 3,
-     11: 14,
-     12: 9,
-     13: 18,
-     14: 7,
-     15: 11,
-     16: 3,
-     17: 9,
-     18: 7,
-     19: 11,
-     20: 6,
-     21: 11,
-     22: 5,
-     23: 10,
-     24: 7,
-     25: 6,
-     26: 13,
-     27: 15,
-     28: 3,
-     29: 15,
-     30: 0,
-     31: 11,
-     32: 1,
-     33: 10,
-     34: 12,
-     35: 14,
-     36: 16,
-     37: 9,
-     38: 11,
-     39: 5,
-     40: 5,
-     41: 19,
-     42: 8,
-     43: 8,
-     44: 15,
-     45: 13,
-     46: 14,
-     47: 17,
-     48: 18,
-     49: 10,
-     50: 16,
-     51: 4,
-     52: 17,
-     53: 4,
-     54: 2,
-     55: 0,
-     56: 17,
-     57: 4,
-     58: 18,
-     59: 17,
-     60: 10,
-     61: 3,
-     62: 2,
-     63: 12,
-     64: 12,
-     65: 16,
-     66: 12,
-     67: 1,
-     68: 9,
-     69: 19,
-     70: 2,
-     71: 10,
-     72: 0,
-     73: 1,
-     74: 16,
-     75: 12,
-     76: 9,
-     77: 13,
-     78: 15,
-     79: 13,
-     80: 16,
-     81: 19,
-     82: 2,
-     83: 4,
-     84: 6,
-     85: 19,
-     86: 5,
-     87: 5,
-     88: 8,
-     89: 19,
-     90: 18,
-     91: 1,
-     92: 2,
-     93: 15,
-     94: 6,
-     95: 0,
-     96: 17,
-     97: 8,
-     98: 14,
-     99: 13}
+    _dict = {
+        0: 4,
+        1: 1,
+        2: 14,
+        3: 8,
+        4: 0,
+        5: 6,
+        6: 7,
+        7: 7,
+        8: 18,
+        9: 3,
+        10: 3,
+        11: 14,
+        12: 9,
+        13: 18,
+        14: 7,
+        15: 11,
+        16: 3,
+        17: 9,
+        18: 7,
+        19: 11,
+        20: 6,
+        21: 11,
+        22: 5,
+        23: 10,
+        24: 7,
+        25: 6,
+        26: 13,
+        27: 15,
+        28: 3,
+        29: 15,
+        30: 0,
+        31: 11,
+        32: 1,
+        33: 10,
+        34: 12,
+        35: 14,
+        36: 16,
+        37: 9,
+        38: 11,
+        39: 5,
+        40: 5,
+        41: 19,
+        42: 8,
+        43: 8,
+        44: 15,
+        45: 13,
+        46: 14,
+        47: 17,
+        48: 18,
+        49: 10,
+        50: 16,
+        51: 4,
+        52: 17,
+        53: 4,
+        54: 2,
+        55: 0,
+        56: 17,
+        57: 4,
+        58: 18,
+        59: 17,
+        60: 10,
+        61: 3,
+        62: 2,
+        63: 12,
+        64: 12,
+        65: 16,
+        66: 12,
+        67: 1,
+        68: 9,
+        69: 19,
+        70: 2,
+        71: 10,
+        72: 0,
+        73: 1,
+        74: 16,
+        75: 12,
+        76: 9,
+        77: 13,
+        78: 15,
+        79: 13,
+        80: 16,
+        81: 19,
+        82: 2,
+        83: 4,
+        84: 6,
+        85: 19,
+        86: 5,
+        87: 5,
+        88: 8,
+        89: 19,
+        90: 18,
+        91: 1,
+        92: 2,
+        93: 15,
+        94: 6,
+        95: 0,
+        96: 17,
+        97: 8,
+        98: 14,
+        99: 13
+    }
 
-  return _dict[target]
+    return _dict[target]

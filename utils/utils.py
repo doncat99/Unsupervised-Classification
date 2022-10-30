@@ -7,6 +7,7 @@ import torch
 import numpy as np
 import errno
 
+
 def mkdir_if_missing(directory):
     if not os.path.exists(directory):
         try:
@@ -57,17 +58,17 @@ class ProgressMeter(object):
 
 
 @torch.no_grad()
-def fill_memory_bank(loader, model, memory_bank):
+def fill_memory_bank(device, loader, model, memory_bank):
     model.eval()
     memory_bank.reset()
 
     for i, batch in enumerate(loader):
-        images = batch['image'].cuda(non_blocking=True)
-        targets = batch['target'].cuda(non_blocking=True)
+        images = batch['image'].to(device, non_blocking=True)
+        targets = batch['target'].to(device, non_blocking=True)
         output = model(images)
         memory_bank.update(output, targets)
         if i % 100 == 0:
-            print('Fill Memory Bank [%d/%d]' %(i, len(loader)))
+            print('Fill Memory Bank [%d/%d]' % (i, len(loader)))
 
 
 def confusion_matrix(predictions, gt, class_names, output_file=None):
@@ -76,17 +77,17 @@ def confusion_matrix(predictions, gt, class_names, output_file=None):
     import matplotlib.pyplot as plt
     confusion_matrix = sklearn.metrics.confusion_matrix(gt, predictions)
     confusion_matrix = confusion_matrix / np.sum(confusion_matrix, 1)
-    
+
     fig, axes = plt.subplots(1)
     plt.imshow(confusion_matrix, cmap='Blues')
     axes.set_xticks([i for i in range(len(class_names))])
     axes.set_yticks([i for i in range(len(class_names))])
     axes.set_xticklabels(class_names, ha='right', fontsize=8, rotation=40)
     axes.set_yticklabels(class_names, ha='right', fontsize=8)
-    
+
     for (i, j), z in np.ndenumerate(confusion_matrix):
         if i == j:
-            axes.text(j, i, '%d' %(100*z), ha='center', va='center', color='white', fontsize=6)
+            axes.text(j, i, '%d' % (100 * z), ha='center', va='center', color='white', fontsize=6)
         else:
             pass
 

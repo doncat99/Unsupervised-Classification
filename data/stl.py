@@ -88,9 +88,8 @@ class STL10(Dataset):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
 
-        if self.split == 'train': # Added this to be able to filter out fp from neighbors
+        if self.split == 'train':  # Added this to be able to filter out fp from neighbors
             self.targets = self.labels
-
 
     def _verify_folds(self, folds):
         if folds is None:
@@ -105,7 +104,6 @@ class STL10(Dataset):
             msg = "Expected type None or int for argument folds, but got type {}."
             raise ValueError(msg.format(type(folds)))
 
-
     def __getitem__(self, index):
         """
         Args:
@@ -117,7 +115,7 @@ class STL10(Dataset):
             img, target = self.data[index], int(self.labels[index])
             class_name = self.classes[target]
         else:
-            img, target = self.data[index], 255 # 255 is an ignore index
+            img, target = self.data[index], 255  # 255 is an ignore index
             class_name = 'unlabeled'
 
         # make consistent with all other datasets
@@ -127,7 +125,7 @@ class STL10(Dataset):
 
         if self.transform is not None:
             img = self.transform(img)
-        
+
         out = {'image': img, 'target': target, 'meta': {'im_size': img_size, 'index': index, 'class_name': class_name}}
 
         return out

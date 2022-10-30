@@ -9,6 +9,8 @@ from torch._six import string_classes
 
 
 """ Custom collate function """
+
+
 def collate_custom(batch):
     if isinstance(batch[0], np.int64):
         return np.stack(batch, 0)
